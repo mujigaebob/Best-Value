@@ -1,0 +1,327 @@
+
+
+<!DOCTYPE html>
+<html lang="ko">
+<head><script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3580412859580418"
+     crossorigin="anonymous"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>그램당 얼마? - 가성비 용량 계산기</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --success: #10b981;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --border: #e2e8f0;
+        }
+        * { box-sizing: border-box; font-family: 'Pretendard', sans-serif; }
+        body { margin: 0; padding: 16px; background: var(--bg); color: var(--text-main); }
+        .container { max-width: 500px; margin: 0 auto; }
+        
+        /* 헤더 */
+        header { text-align: center; margin-bottom: 24px; }
+        header h1 { font-size: 1.6rem; margin: 0 0 8px 0; color: var(--primary); font-weight: 800; }
+        header p { font-size: 0.95rem; color: var(--text-sub); margin: 0; }
+
+        /* 상품 입력 카드 */
+        .card {
+            background: var(--card-bg); border: 2px solid var(--border); border-radius: 12px;
+            padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            transition: all 0.2s ease; position: relative;
+        }
+        .card.best { border-color: var(--success); background: #f0fdf4; }
+        .best-badge {
+            display: none; position: absolute; top: -10px; right: 16px;
+            background: var(--success); color: white; font-size: 0.75rem; font-weight: bold;
+            padding: 4px 10px; border-radius: 20px; box-shadow: 0 2px 4px rgba(16,185,129,0.3);
+        }
+        .card.best .best-badge { display: block; }
+        
+        .card-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .card-title { font-weight: bold; font-size: 1rem; color: var(--text-main); }
+        
+        .input-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; margin-bottom: 8px; }
+        .input-full { width: 100%; margin-bottom: 8px; }
+        input, select {
+            width: 100%; padding: 10px; border: 1px solid var(--border);
+            border-radius: 6px; font-size: 0.95rem; outline: none;
+        }
+        input:focus { border-color: var(--primary); }
+
+        /* 결과 표시 영역 */
+        .unit-price {
+            margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border);
+            text-align: right; font-size: 1.1rem; font-weight: bold; color: var(--text-main);
+        }
+        .card.best .unit-price { color: #059669; font-size: 1.2rem; }
+        
+        /* 비교 결과 요약 배너 */
+        .summary-box {
+            background: #eff6ff; border-left: 4px solid var(--primary); padding: 12px 16px;
+            border-radius: 8px; font-size: 0.95rem; font-weight: bold; color: #1e40af;
+            margin: 16px 0; text-align: center; display: none;
+        }
+
+        /* 컨트롤 버튼 */
+        .btn-group { display: flex; gap: 8px; margin: 16px 0; }
+        .btn {
+            flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold;
+            cursor: pointer; transition: background 0.2s; font-size: 0.9rem;
+        }
+        .btn-outline { background: white; border: 1px solid var(--border); color: var(--text-main); }
+        .btn-primary { background: var(--primary); color: white; }
+        
+        /* 즐겨찾기 영역 */
+        .fav-section { margin-top: 24px; background: white; padding: 16px; border-radius: 12px; border: 1px solid var(--border); }
+        .fav-title { font-size: 0.95rem; font-weight: bold; margin-bottom: 10px; display: flex; justify-content: space-between; }
+        .fav-list { list-style: none; padding: 0; margin: 0; max-height: 150px; overflow-y: auto; }
+        .fav-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem;
+        }
+        .fav-btn { background: #e2e8f0; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; }
+
+        /* 푸터 */
+        footer { text-align: center; margin-top: 30px; font-size: 0.8rem; color: var(--text-sub); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚖️ 가성비 용량 계산기</h1>
+            <p>용량과 가격을 입력하면 100g당 최저가를 즉시 찾아냅니다!</p>
+        </header>
+
+        <!-- 상품 비교 리스트 -->
+        <div id="product-list"></div>
+
+        <div class="btn-group">
+            <button class="btn btn-outline" onclick="addProduct()">+ 상품 추가</button>
+            <button class="btn btn-outline" onclick="resetAll()">🔄 초기화</button>
+        </div>
+
+        <!-- 실시간 비교 요약 창 -->
+        <div id="summary-box" class="summary-box"></div>
+
+        <button class="btn btn-primary" style="width:100%" onclick="saveFavorite()">★ 현재 1위 상품 즐겨찾기에 저장</button>
+
+        <!-- 즐겨찾기 서랍 -->
+        <div class="fav-section">
+            <div class="fav-title">
+                <span>★ 나의 가성비 저장 템</span>
+                <span style="font-size:0.8rem; font-weight:normal; color:#64748b;">터치 시 상품 A로 불러옴</span>
+            </div>
+            <ul id="fav-list" class="fav-list"></ul>
+        </div>
+
+        <footer>
+            <p>© 2026 가성비 계산기. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script>
+        let products = [
+            { id: 1, name: '상품 A (예: 마트 신라면)', size: '', unit: '1', price: '', bundle: '1' },
+            { id: 2, name: '상품 B (예: 쿠팡 신라면)', size: '', unit: '1', price: '', bundle: '1' }
+        ];
+        let nextId = 3;
+
+        function render() {
+            const list = document.getElementById('product-list');
+            list.innerHTML = '';
+            
+            products.forEach((p, index) => {
+                const card = document.createElement('div');
+                card.className = `card ${p.isBest ? 'best' : ''}`;
+                card.dataset.id = p.id;
+                card.innerHTML = `
+                    <div class="best-badge">👍 Best 가성비 (1위)</div>
+                    <div class="card-header">
+                        <span class="card-title">🛒 ${p.name || '상품 ' + (index+1)}</span>
+                        ${products.length > 2 ? `<span style="cursor:pointer;color:#94a3b8;" onclick="removeProduct(${p.id})">✕</span>` : ''}
+                    </div>
+                    <div class="input-full">
+                        <input type="text" placeholder="상품명 (선택)" value="${p.name}" oninput="updateField(${p.id}, 'name', this.value)">
+                    </div>
+                    <div class="input-grid">
+                        <input type="number" placeholder="용량 (예: 500)" value="${p.size}" oninput="updateField(${p.id}, 'size', this.value)">
+                        <select onchange="updateField(${p.id}, 'unit', this.value)">
+                            <option value="1" ${p.unit === '1' ? 'selected' : ''}>g / ml</option>
+                            <option value="1000" ${p.unit === '1000' ? 'selected' : ''}>kg / L</option>
+                            <option value="1" ${p.unit === '1' ? 'selected' : ''}>개</option>
+                        </select>
+                    </div>
+                    <div class="input-grid">
+                        <input type="number" placeholder="가격 (원)" value="${p.price}" oninput="updateField(${p.id}, 'price', this.value)">
+                        <input type="number" placeholder="묶음 수량 (기본 1)" value="${p.bundle}" oninput="updateField(${p.id}, 'bundle', this.value)">
+                    </div>
+                    <div class="unit-price">
+                        ${p.unitPrice ? `100g(단위)당 : ${p.unitPrice.toLocaleString()}원` : '가격을 입력해주세요'}
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function updateField(id, field, value) {
+            const p = products.find(item => item.id === id);
+            if (p) {
+                p[field] = value;
+                // 입력 중에는 render()를 다시 호출하지 않는다.
+                // (input을 통째로 새로 그리면 포커스가 풀려 한 글자씩만 입력되는 문제가 생김)
+                calculate();
+            }
+        }
+
+        function calculate() {
+            let minPrice = Infinity;
+            let bestIndex = -1;
+
+            products.forEach((p, index) => {
+                const size = parseFloat(p.size) || 0;
+                const unit = parseFloat(p.unit) || 1;
+                const price = parseFloat(p.price) || 0;
+                const bundle = parseFloat(p.bundle) || 1;
+
+                const totalSize = size * unit * bundle;
+                if (totalSize > 0 && price > 0) {
+                    p.unitPrice = Math.round((price / totalSize) * 100);
+                    if (p.unitPrice < minPrice) {
+                        minPrice = p.unitPrice;
+                        bestIndex = index;
+                    }
+                } else {
+                    p.unitPrice = null;
+                }
+                p.isBest = false;
+            });
+
+            const summaryBox = document.getElementById('summary-box');
+            const validProducts = products.filter(p => p.unitPrice !== null);
+
+            if (bestIndex !== -1 && validProducts.length > 1) {
+                products[bestIndex].isBest = true;
+                
+                const sorted = [...validProducts].sort((a, b) => a.unitPrice - b.unitPrice);
+                const diff = sorted[1].unitPrice - sorted[0].unitPrice;
+                const percent = Math.round((diff / sorted[1].unitPrice) * 100);
+
+                summaryBox.style.display = 'block';
+                summaryBox.innerHTML = `🏆 <strong>${sorted[0].name || '1위 상품'}</strong>이(가) 2위보다 100g당 <span style="color:#059669;">${diff.toLocaleString()}원 더 저렴</span>합니다! (약 ${percent}% 절약)`;
+            } else {
+                summaryBox.style.display = 'none';
+            }
+
+            updateDisplay();
+        }
+
+        // 입력창(input)은 건드리지 않고, 계산 결과(단위가격/1위 배지)만 갱신
+        function updateDisplay() {
+            products.forEach(p => {
+                const card = document.querySelector(`.card[data-id="${p.id}"]`);
+                if (!card) return; // 아직 렌더링되지 않은 경우(구조 변경 직후)는 render()에서 처리됨
+
+                card.classList.toggle('best', !!p.isBest);
+
+                const priceDiv = card.querySelector('.unit-price');
+                if (priceDiv) {
+                    priceDiv.textContent = p.unitPrice
+                        ? `100g(단위)당 : ${p.unitPrice.toLocaleString()}원`
+                        : '가격을 입력해주세요';
+                }
+            });
+        }
+
+        function addProduct() {
+            if (products.length >= 4) { alert('최대 4개 상품까지만 비교 가능합니다.'); return; }
+            products.push({ id: nextId++, name: `상품 ${String.fromCharCode(64 + nextId - 1)}`, size: '', unit: '1', price: '', bundle: '1' });
+            render();
+            calculate();
+        }
+
+        function removeProduct(id) {
+            products = products.filter(p => p.id !== id);
+            render();
+            calculate();
+        }
+
+        function resetAll() {
+            products.forEach((p, idx) => {
+                p.name = idx === 0 ? '상품 A' : (idx === 1 ? '상품 B' : `상품 ${idx+1}`);
+                p.size = ''; p.price = ''; p.bundle = '1'; p.unitPrice = null; p.isBest = false;
+            });
+            document.getElementById('summary-box').style.display = 'none';
+            render();
+            calculate();
+        }
+
+        // --- 즐겨찾기 로컬 스토리지 로직 ---
+        function saveFavorite() {
+            const bestProduct = products.find(p => p.isBest);
+            if (!bestProduct) { alert('먼저 가격을 입력하여 1위 가성비 상품을 확인해주세요!'); return; }
+            
+            const favName = prompt('이 상품을 어떤 이름으로 저장할까요? (예: 쿠팡 햇반 210g 기준)', bestProduct.name);
+            if (!favName) return;
+
+            const favs = JSON.parse(localStorage.getItem('myFavs') || '[]');
+            favs.push({ name: favName, size: bestProduct.size, unit: bestProduct.unit, price: bestProduct.price, bundle: bestProduct.bundle, unitPrice: bestProduct.unitPrice });
+            localStorage.setItem('myFavs', JSON.stringify(favs));
+            loadFavorites();
+            alert('즐겨찾기에 저장되었습니다!');
+        }
+
+        function loadFavorites() {
+            const favs = JSON.parse(localStorage.getItem('myFavs') || '[]');
+            const list = document.getElementById('fav-list');
+            list.innerHTML = '';
+            if (favs.length === 0) {
+                list.innerHTML = '<li style="color:#94a3b8; padding:8px 0;">저장된 가성비 템이 없습니다.</li>';
+                return;
+            }
+            favs.forEach((item, idx) => {
+                const li = document.createElement('li');
+                li.className = 'fav-item';
+                li.innerHTML = `
+                    <div>
+                        <strong>${item.name}</strong> 
+                        <span style="color:#64748b; font-size:0.8rem;">(100g당 ${item.unitPrice}원)</span>
+                    </div>
+                    <div>
+                        <button class="fav-btn" onclick="applyFav(${idx})">불러오기</button>
+                        <button class="fav-btn" style="color:#ef4444;" onclick="deleteFav(${idx})">✕</button>
+                    </div>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        function applyFav(index) {
+            const favs = JSON.parse(localStorage.getItem('myFavs') || '[]');
+            const item = favs[index];
+            if (item && products[0]) {
+                products[0].name = `[저장됨] ${item.name}`;
+                products[0].size = item.size;
+                products[0].unit = item.unit;
+                products[0].price = item.price;
+                products[0].bundle = item.bundle || '1';
+                render();
+                calculate();
+                alert('상품 A에 즐겨찾기 상품이 불러와졌습니다. 마트 상품과 비교해보세요!');
+            }
+        }
+
+        function deleteFav(index) {
+            let favs = JSON.parse(localStorage.getItem('myFavs') || '[]');
+            favs.splice(index, 1);
+            localStorage.setItem('myFavs', JSON.stringify(favs));
+            loadFavorites();
+        }
+
+        render();
+        loadFavorites();
+    </script>
+</body>
+</html>
